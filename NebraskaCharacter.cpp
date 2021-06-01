@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #include "NebraskaCharacter.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
@@ -56,6 +54,7 @@ ANebraskaCharacter::ANebraskaCharacter()
 	StrafeSpeed = 2.2f;
 	Landed = true;
 	DoOnce = true;
+	DoOnce2 = true;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(FirstPersonCameraComponent);
@@ -95,13 +94,51 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 		GrabberClass->TraceHandleLocation(PhysicsHandle, FirstPersonCameraComponent);
 	}
 
-	//Interact Object
-
-	//PickUp Object
+	if (bHoldingItem)
+	{
+		pickupHudOff();
+	}
 
 	Start = FirstPersonCameraComponent->GetComponentLocation();
 	ForwardVector = FirstPersonCameraComponent->GetForwardVector();
-	End = ((ForwardVector * 330.0f) + Start);
+	End = ((ForwardVector * 250.0f) + Start);
+
+	//Interact Object
+
+	if (GetWorld()->LineTraceSingleByObjectType(Hit, Start, End, PhysicObjectType2))
+	{
+		if (Hit.GetActor() != nullptr)
+		{
+			//DrawDebugLine(GetWorld(), Start, End, FColor::Blue, false, 1, 0, 1);
+			if (PhysicsHandle != nullptr && GrabberClass->GetIsObjectHeld() && CurrentItem == nullptr)
+			{
+				intHudOff();
+			}
+			else
+			{
+				intHudOn();
+			}
+		}
+		else
+		{
+			intHudOff();
+		}
+	}
+	else
+	{
+		intHudOff();
+		if (Hit.GetActor() == nullptr && GrabberClass->bObjectHeld && GrabberClass->bPhysicHandleActive)
+		{
+			if (DoOnce2)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Setting timer"));
+				GetWorld()->GetTimerManager().SetTimer(DropDely, this, &ANebraskaCharacter::DropDelyEnd, 1.0f, false);
+				DoOnce2 = false;
+			}
+		}
+	}
+
+	//PickUp Object
 
 	//DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
 
@@ -111,11 +148,17 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 		{
 			if (Hit.GetActor()->GetClass()->IsChildOf(AGrabObject::StaticClass()))
 			{
+				pickupHudOn();
 				CurrentItem = Cast<AGrabObject>(Hit.GetActor());
+			}
+			else
+			{
+				pickupHudOff();
 			}
 		}
 		else
 		{
+			pickupHudOff();
 			CurrentItem = NULL;
 		}
 	}
@@ -149,7 +192,6 @@ void ANebraskaCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAction("GlowStick", IE_Pressed, this, &ANebraskaCharacter::GlowStick1);
 
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ANebraskaCharacter::Grab);
-	//PlayerInputComponent->BindAction("Interact", IE_Released, this, &ANebraskaCharacter::GrabR);
 
 	PlayerInputComponent->BindAction("Throwing", IE_Pressed, this, &ANebraskaCharacter::Throw);
 	PlayerInputComponent->BindAction("Throwing", IE_Released, this, &ANebraskaCharacter::ThrowR);
@@ -369,7 +411,7 @@ void ANebraskaCharacter::GlowStick1()
 
 void ANebraskaCharacter::Grab()
 {
-	if (GrabberClass != nullptr)
+	if (GrabberClass != nullptr && CurrentItem == nullptr)
 	{
 		switch (GrabberClass->GetIsObjectHeld())
 		{
@@ -407,11 +449,6 @@ void ANebraskaCharacter::Grab()
 	}
 }
 
-void ANebraskaCharacter::GrabR()
-{
-
-}
-
 void ANebraskaCharacter::Throw()
 {
 	bMouseDown = true;
@@ -439,4 +476,19 @@ void ANebraskaCharacter::ThrowR()
 {
 	bMouseUp = true;
 	bMouseDown = false;
+}
+
+void ANebraskaCharacter::DropDelyEnd()
+{
+	if (Hit.GetActor() == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Timer Active"));
+		GrabberClass->Release(PhysicsHandle);
+		DoOnce2 = true;
+		UE_LOG(LogTemp, Warning, TEXT("Timer Success"));
+	}
+	else
+	{
+		DoOnce2 = true;
+	}
 }
