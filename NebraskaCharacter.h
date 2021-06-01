@@ -64,6 +64,9 @@ class ANebraskaCharacter : public ACharacter
 	bool DoOnce;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	bool DoOnce2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	float StrafeSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
@@ -74,6 +77,9 @@ class ANebraskaCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	class UPhysicsHandleComponent* PhysicsHandle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TArray<TEnumAsByte<EObjectTypeQuery>> PhysicObjectType2;
 
 public:
 	ANebraskaCharacter();
@@ -95,17 +101,29 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ClearTimers();
 
-	UFUNCTION()
-	void Grab();
+	UFUNCTION(BlueprintImplementableEvent)
+	void pickupHudOn();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void pickupHudOff();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void intHudOn();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void intHudOff();
 
 	UFUNCTION()
-	void GrabR();
+	void Grab();
 
 	UFUNCTION()
 	void Throw();
 
 	UFUNCTION()
 	void ThrowR();
+
+	UFUNCTION()
+	void DropDelyEnd();
 
 
 protected:
@@ -146,6 +164,8 @@ public:
 	FHitResult Hit;
 	FComponentQueryParams DefaultComponentQueryParams;
 	FCollisionResponseParams DefaultResponseParam;
+
+	FTimerHandle DropDely;
 
 
 protected:
