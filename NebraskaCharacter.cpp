@@ -1,3 +1,5 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
 #include "NebraskaCharacter.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
@@ -16,7 +18,9 @@
 #include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "GameFramework/Actor.h"
+#include "Nebraska/ExaminationComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Containers/Array.h"
 #include "Nebraska/InteractComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
@@ -67,7 +71,13 @@ ANebraskaCharacter::ANebraskaCharacter()
 
 	CurrentItem = NULL;
 	bCanMove = true;
+	bCanLook = true;
 	bInspecting = false;
+
+	LookinPhys = false;
+	LookinExam = false;
+
+	NormalHud = true;
 
 	GrabberClass = CreateDefaultSubobject<UInteractComponent>(TEXT("GrabberClass"));
 
@@ -82,7 +92,6 @@ void ANebraskaCharacter::BeginPlay()
 
 	PitchMax = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->ViewPitchMax;
 	PitchMin = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->ViewPitchMin;
-	
 }
 
 void ANebraskaCharacter::Tick(float DeltaTime)
@@ -103,6 +112,40 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 	ForwardVector = FirstPersonCameraComponent->GetForwardVector();
 	End = ((ForwardVector * 250.0f) + Start);
 
+	//Exam Object
+	if (GetWorld()->LineTraceSingleByObjectType(Hit2, Start, End, ExamObj))
+	{
+		if (Hit2.GetActor() != nullptr)
+		{
+			ExamComp = Hit2.GetActor()->FindComponentByClass<UExaminationComponent>();
+			if (ExamComp->IsExamin && ExamComp != nullptr)
+			{
+				ExamHudOff();
+				NormalHud = false;
+				LookinExam = true;
+			}
+			else
+			{
+				if (LookinPhys == false)
+				{
+					ExamHudOn();
+					NormalHud = true;
+					LookinExam = true;
+				}
+			}
+		}
+		else
+		{
+			ExamHudOff();
+			LookinExam = false;
+		}
+	}
+	else
+	{
+		ExamHudOff();
+		LookinExam = false;
+	}
+
 	//Interact Object
 
 	if (GetWorld()->LineTraceSingleByObjectType(Hit, Start, End, PhysicObjectType2))
@@ -113,20 +156,29 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 			if (PhysicsHandle != nullptr && GrabberClass->GetIsObjectHeld() && CurrentItem == nullptr)
 			{
 				intHudOff();
+				NormalHud = false;
+				LookinPhys = true;
 			}
 			else
 			{
-				intHudOn();
+				if (LookinExam == false)
+				{
+					intHudOn();
+					NormalHud = true;
+					LookinPhys = true;
+				}
 			}
 		}
 		else
 		{
 			intHudOff();
+			LookinPhys = false;
 		}
 	}
 	else
 	{
 		intHudOff();
+		LookinPhys = false;
 		if (Hit.GetActor() == nullptr && GrabberClass->bObjectHeld && GrabberClass->bPhysicHandleActive)
 		{
 			if (DoOnce2)
@@ -195,6 +247,8 @@ void ANebraskaCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("Throwing", IE_Pressed, this, &ANebraskaCharacter::Throw);
 	PlayerInputComponent->BindAction("Throwing", IE_Released, this, &ANebraskaCharacter::ThrowR);
+
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ANebraskaCharacter::Examin);
 
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ANebraskaCharacter::Interact);
 
@@ -311,19 +365,25 @@ void ANebraskaCharacter::MoveRight(float Value)
 
 void ANebraskaCharacter::TurnAtRate(float Rate)
 {
-	// calculate delta for this frame from the rate information
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	if (bCanLook)
+	{
+		// calculate delta for this frame from the rate information
+		AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	}
 }
 
 void ANebraskaCharacter::LookUpAtRate(float Rate)
 {
-	// calculate delta for this frame from the rate information
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	if (bCanLook)
+	{
+		// calculate delta for this frame from the rate information
+		AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	}
 }
 
 void ANebraskaCharacter::sprint()
 {
-	if (CanSprint == true && GetCharacterMovement()->MaxWalkSpeed > 299.9)
+	if (CanSprint == true && GetCharacterMovement()->MaxWalkSpeed > 299.9 && bCanMove)
 	{
 		if (DoOnce == true)
 		{
@@ -403,15 +463,43 @@ void ANebraskaCharacter::ToggleItemPickUp()
 	}
 }
 
+void ANebraskaCharacter::Examin()
+{
+	if (Hit2.GetActor() != nullptr && LookinExam)
+	{
+		if (ExamComp->IsExamin)
+		{
+			ToggleMovement();
+			ExamHudOff();
+			NormalHud = true;
+			ExamComp->Examin2End();
+		}
+		else
+		{
+			ToggleMovement();
+			ExamHudOff();
+			NormalHud = false;
+			ExamComp->Examin2();
+			if (GrabberClass->GetIsObjectHeld())
+			{
+				GrabberClass->Release(PhysicsHandle);
+			}
+		}
+	}
+}
+
 void ANebraskaCharacter::GlowStick1()
 {
-	glowstick->ToggleVisibility(true);
-	glowlighton();
+	if (bCanMove)
+	{
+		glowstick->ToggleVisibility(true);
+		glowlighton();
+	}
 }
 
 void ANebraskaCharacter::Grab()
 {
-	if (GrabberClass != nullptr && CurrentItem == nullptr)
+	if (GrabberClass != nullptr && CurrentItem == nullptr && LookinExam == false)
 	{
 		switch (GrabberClass->GetIsObjectHeld())
 		{
@@ -422,6 +510,8 @@ void ANebraskaCharacter::Grab()
 					if (GrabberClass->Release(PhysicsHandle))
 					{
 						UE_LOG(LogTemp, Warning, TEXT("Released"));
+						NormalHud = true;
+						LookinPhys = false;
 					}
 					else
 					{
@@ -437,6 +527,8 @@ void ANebraskaCharacter::Grab()
 					if (GrabberClass->Grab(this, PhysicsHandle, FirstPersonCameraComponent))
 					{
 						UE_LOG(LogTemp, Warning, TEXT("Grabbed"));
+						NormalHud = false;
+						LookinPhys = true;
 					}
 					else
 					{
@@ -485,6 +577,9 @@ void ANebraskaCharacter::DropDelyEnd()
 		UE_LOG(LogTemp, Warning, TEXT("Timer Active"));
 		GrabberClass->Release(PhysicsHandle);
 		DoOnce2 = true;
+		NormalHud = true;
+		intHudOff();
+		LookinPhys = false;
 		UE_LOG(LogTemp, Warning, TEXT("Timer Success"));
 	}
 	else
