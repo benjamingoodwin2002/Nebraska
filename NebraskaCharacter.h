@@ -11,6 +11,7 @@
 #include "Sound/SoundCue.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "Nebraska/GrabObject.h"
+#include "Nebraska/ExaminationComponent.h"
 #include "NebraskaCharacter.generated.h"
 
 class UInputComponent;
@@ -26,10 +27,6 @@ UCLASS(config=Game)
 class ANebraskaCharacter : public ACharacter
 {
 	GENERATED_BODY()
-
-	/** First person camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FirstPersonCameraComponent;
 
 	/** Motion controller (right hand) */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -113,6 +110,12 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void intHudOff();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ExamHudOn();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ExamHudOff();
+
 	UFUNCTION()
 	void Grab();
 
@@ -132,6 +135,10 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 public:
+	/** First person camera */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	UCameraComponent* FirstPersonCameraComponent;
+
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
@@ -147,7 +154,18 @@ public:
 	UPROPERTY(EditAnywhere)
 	class AGrabObject* CurrentItem;
 
+	UPROPERTY(EditAnywhere)
+	class UExaminationComponent* ExamComp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool NormalHud;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bCanLook;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bCanMove;
+
 	bool bHoldingItem;
 	bool bInspecting;
 
@@ -167,6 +185,12 @@ public:
 
 	FTimerHandle DropDely;
 
+	FHitResult Hit2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<TEnumAsByte<EObjectTypeQuery>> ExamObj;
+
+	bool LookinPhys;
+	bool LookinExam;
 
 protected:
 
@@ -202,6 +226,8 @@ protected:
 
 	void ToggleMovement();
 	void ToggleItemPickUp();
+
+	void Examin();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* glowstick;
