@@ -22,6 +22,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Containers/Array.h"
 #include "Nebraska/InteractComponent.h"
+#include "Nebraska/PickUpActor.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -59,6 +60,7 @@ ANebraskaCharacter::ANebraskaCharacter()
 	Landed = true;
 	DoOnce = true;
 	DoOnce2 = true;
+	Health = 1.0f;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(FirstPersonCameraComponent);
@@ -76,12 +78,18 @@ ANebraskaCharacter::ANebraskaCharacter()
 
 	LookinPhys = false;
 	LookinExam = false;
+	LookinPick = false;
+	LookinLevel = false;
+
+	CrowbarUse = false;
 
 	NormalHud = true;
 
 	GrabberClass = CreateDefaultSubobject<UInteractComponent>(TEXT("GrabberClass"));
 
 	PhysicsHandle = CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("PhysicsHandle"));
+
+	Capacity = 18;
 
 }
 
@@ -92,6 +100,8 @@ void ANebraskaCharacter::BeginPlay()
 
 	PitchMax = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->ViewPitchMax;
 	PitchMin = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->ViewPitchMin;
+
+	Instance = Cast<UNebraskaGameInstance>(GetGameInstance());
 }
 
 void ANebraskaCharacter::Tick(float DeltaTime)
@@ -111,6 +121,76 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 	Start = FirstPersonCameraComponent->GetComponentLocation();
 	ForwardVector = FirstPersonCameraComponent->GetForwardVector();
 	End = ((ForwardVector * 250.0f) + Start);
+
+	//Level Door
+	if (GetWorld()->LineTraceSingleByObjectType(Hit4, Start, End, LevelObj))
+	{
+		if (Hit4.GetActor() != nullptr)
+		{
+			Leveldoor = Cast<ALevelDoor>(Hit4.GetActor());
+			if (!LookinLevel)
+			{
+				if (!LookinPhys && !LookinExam)
+				{
+					LevelHudOn();
+					LookinLevel = true;
+				}
+			}
+		}
+		else
+		{
+			if (LookinLevel)
+			{
+				LevelHudOff();
+				LookinLevel = false;
+			}
+		}
+	}
+	else
+	{
+		if (LookinLevel)
+		{
+			LevelHudOff();
+			LookinLevel = false;
+		}
+	}
+
+	//PickUp Object
+	if (GetWorld()->LineTraceSingleByObjectType(Hit3, Start, End, PickObj))
+	{
+		//DrawDebugLine(GetWorld(), Start, End, FColor::Blue, false, 1, 0, 1);
+		if (Hit3.GetActor() != nullptr)
+		{
+			PickUpClass = Cast<APickUpActor>(Hit3.GetActor());
+			if (!LookinPick)
+			{
+				if (!LookinPhys && !LookinExam)
+				{
+					//UE_LOG(LogTemp, Warning, TEXT("PickUp Success"));
+					pickupHudOn();
+					LookinPick = true;
+				}
+			}
+		}
+		else
+		{
+			if (LookinPick)
+			{
+				//UE_LOG(LogTemp, Warning, TEXT("failed"));
+				pickupHudOff();
+				LookinPick = false;
+			}
+		}
+	}
+	else
+	{
+		if (LookinPick)
+		{
+			pickupHudOff();
+			//UE_LOG(LogTemp, Warning, TEXT("failed2"));
+			LookinPick = false;
+		}
+	}
 
 	//Exam Object
 	if (GetWorld()->LineTraceSingleByObjectType(Hit2, Start, End, ExamObj))
@@ -190,7 +270,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 		}
 	}
 
-	//PickUp Object
+	//Fake Pick Up Object
 
 	//DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1, 0, 1);
 
@@ -200,17 +280,17 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 		{
 			if (Hit.GetActor()->GetClass()->IsChildOf(AGrabObject::StaticClass()))
 			{
-				pickupHudOn();
+				//pickupHudOn();
 				CurrentItem = Cast<AGrabObject>(Hit.GetActor());
 			}
 			else
 			{
-				pickupHudOff();
+				//pickupHudOff();
 			}
 		}
 		else
 		{
-			pickupHudOff();
+			//pickupHudOff();
 			CurrentItem = NULL;
 		}
 	}
@@ -245,10 +325,14 @@ void ANebraskaCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ANebraskaCharacter::Grab);
 
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ANebraskaCharacter::PickUp);
+
 	PlayerInputComponent->BindAction("Throwing", IE_Pressed, this, &ANebraskaCharacter::Throw);
 	PlayerInputComponent->BindAction("Throwing", IE_Released, this, &ANebraskaCharacter::ThrowR);
 
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ANebraskaCharacter::Examin);
+
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ANebraskaCharacter::OpenDoor);
 
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &ANebraskaCharacter::Interact);
 
@@ -268,6 +352,29 @@ void ANebraskaCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("TurnRate", this, &ANebraskaCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &ANebraskaCharacter::LookUpAtRate);
+}
+
+bool ANebraskaCharacter::AddItem(APickUpActor* Item)
+{
+	if (Items.Num() >= Capacity)
+	{
+		return false;
+	}
+
+	Items.Add(Item);
+	OnInventoryUpdated.Broadcast();
+	return true;
+}
+
+bool ANebraskaCharacter::RemoveItem(APickUpActor* Item)
+{
+	if (Item)
+	{
+		Items.RemoveSingle(Item);
+		OnInventoryUpdated.Broadcast();
+		return true;
+	}
+	return false;
 }
 
 void ANebraskaCharacter::OnResetVR()
@@ -488,6 +595,19 @@ void ANebraskaCharacter::Examin()
 	}
 }
 
+void ANebraskaCharacter::PickUp()
+{
+	if (LookinPick)
+	{
+		if (PickUpClass->PickedUp == false)
+		{
+			AddItem(PickUpClass);
+			PickUpClass->OnPickedUp();
+			PickUpClass->PickedUp = true;
+		}
+	}
+}
+
 void ANebraskaCharacter::GlowStick1()
 {
 	if (bCanMove)
@@ -585,5 +705,23 @@ void ANebraskaCharacter::DropDelyEnd()
 	else
 	{
 		DoOnce2 = true;
+	}
+}
+
+void ANebraskaCharacter::UseItem(APickUpActor* Item)
+{
+	if (Item)
+	{
+		Item->Use(this);
+		Item->OnUse(this);
+	}
+}
+
+void ANebraskaCharacter::OpenDoor()
+{
+	if (LookinLevel)
+	{
+		Leveldoor->OpenDoor(this, Instance);
+		Leveldoor->OpenDoorBP(this, Instance);
 	}
 }
