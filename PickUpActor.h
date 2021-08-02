@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Nebraska/NebraskaCharacter.h"
+#include "Nebraska/NebraskaGameInstance.h"
 #include "PickUpActor.generated.h"
 
 UCLASS()
@@ -26,6 +27,8 @@ public:
 
 	UFUNCTION()
 	void OnPickedUp();
+
+	virtual void PickUpEvent();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Name;
