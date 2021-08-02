@@ -83,6 +83,8 @@ ANebraskaCharacter::ANebraskaCharacter()
 
 	CrowbarUse = false;
 
+	PhysicsHandleHolding = false;
+
 	NormalHud = true;
 
 	GrabberClass = CreateDefaultSubobject<UInteractComponent>(TEXT("GrabberClass"));
@@ -107,6 +109,17 @@ void ANebraskaCharacter::BeginPlay()
 void ANebraskaCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (Instance->HealthInst <= 0.0f)
+	{
+		intHudOff();
+		notolerance = true;
+		NormalHud = false;
+		bCanLook = false;
+		bCanMove = false;
+		FirstPersonCameraComponent->bUsePawnControlRotation = false;
+		bUseControllerRotationYaw = false;
+	}
 
 	if (GrabberClass != nullptr)
 	{
@@ -134,6 +147,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 				{
 					LevelHudOn();
 					LookinLevel = true;
+					NormalHud = false;
 				}
 			}
 		}
@@ -143,6 +157,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 			{
 				LevelHudOff();
 				LookinLevel = false;
+				NormalHud = true;
 			}
 		}
 	}
@@ -152,6 +167,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 		{
 			LevelHudOff();
 			LookinLevel = false;
+			NormalHud = true;
 		}
 	}
 
@@ -166,7 +182,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 			{
 				if (!LookinPhys && !LookinExam)
 				{
-					//UE_LOG(LogTemp, Warning, TEXT("PickUp Success"));
+					UE_LOG(LogTemp, Warning, TEXT("PickUp LOOK"));
 					pickupHudOn();
 					LookinPick = true;
 				}
@@ -209,7 +225,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 				if (LookinPhys == false)
 				{
 					ExamHudOn();
-					NormalHud = true;
+					NormalHud = false;
 					LookinExam = true;
 				}
 			}
@@ -224,6 +240,21 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 	{
 		ExamHudOff();
 		LookinExam = false;
+		if (LookinLevel || LookinPhys || LookinPick)
+		{
+			NormalHud = false;
+		}
+		else
+		{
+			if (notolerance)
+			{
+				NormalHud = false;
+			}
+			else
+			{
+				NormalHud = true;
+			}
+		}
 	}
 
 	//Interact Object
@@ -238,9 +269,11 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 				intHudOff();
 				NormalHud = false;
 				LookinPhys = true;
+				notolerance = true;
 			}
 			else
 			{
+				notolerance = false;
 				if (LookinExam == false)
 				{
 					intHudOn();
@@ -253,6 +286,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 		{
 			intHudOff();
 			LookinPhys = false;
+			notolerance = false;
 		}
 	}
 	else
@@ -264,7 +298,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 			if (DoOnce2)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Setting timer"));
-				GetWorld()->GetTimerManager().SetTimer(DropDely, this, &ANebraskaCharacter::DropDelyEnd, 1.0f, false);
+				GetWorld()->GetTimerManager().SetTimer(DropDely, this, &ANebraskaCharacter::DropDelyEnd, 0.7f, false);
 				DoOnce2 = false;
 			}
 		}
@@ -495,6 +529,7 @@ void ANebraskaCharacter::sprint()
 		if (DoOnce == true)
 		{
 			GetCharacterMovement()->MaxWalkSpeed *= SprintSpeedMultiply;
+			IsSprinting = true;
 			DoOnce = false;
 		}
 	}
@@ -506,6 +541,7 @@ void ANebraskaCharacter::stopsprinting()
 	{
 		if (DoOnce == false)
 		{
+			IsSprinting = false;
 			GetCharacterMovement()->MaxWalkSpeed /= SprintSpeedMultiply;
 			DoOnce = true;
 		}
@@ -590,6 +626,7 @@ void ANebraskaCharacter::Examin()
 			if (GrabberClass->GetIsObjectHeld())
 			{
 				GrabberClass->Release(PhysicsHandle);
+				notolerance = false;
 			}
 		}
 	}
@@ -599,12 +636,22 @@ void ANebraskaCharacter::PickUp()
 {
 	if (LookinPick)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("PickUp HALF Success"));
 		if (PickUpClass->PickedUp == false)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("PickUp Success"));
 			AddItem(PickUpClass);
 			PickUpClass->OnPickedUp();
 			PickUpClass->PickedUp = true;
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("PickUp FAIL"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PickUp HALF FAIL"));
 	}
 }
 
@@ -630,8 +677,10 @@ void ANebraskaCharacter::Grab()
 					if (GrabberClass->Release(PhysicsHandle))
 					{
 						UE_LOG(LogTemp, Warning, TEXT("Released"));
+						PhysicsHandleHolding = false;
 						NormalHud = true;
 						LookinPhys = false;
+						notolerance = false;
 					}
 					else
 					{
@@ -647,6 +696,7 @@ void ANebraskaCharacter::Grab()
 					if (GrabberClass->Grab(this, PhysicsHandle, FirstPersonCameraComponent))
 					{
 						UE_LOG(LogTemp, Warning, TEXT("Grabbed"));
+						PhysicsHandleHolding = true;
 						NormalHud = false;
 						LookinPhys = true;
 					}
@@ -674,6 +724,7 @@ void ANebraskaCharacter::Throw()
 				if (GrabberClass->Throw(PhysicsHandle, FirstPersonCameraComponent, bMouseDown))
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Throw"));
+					PhysicsHandleHolding = false;
 				}
 				else
 				{
@@ -688,6 +739,8 @@ void ANebraskaCharacter::ThrowR()
 {
 	bMouseUp = true;
 	bMouseDown = false;
+	NormalHud = true;
+	notolerance = false;
 }
 
 void ANebraskaCharacter::DropDelyEnd()
@@ -700,6 +753,7 @@ void ANebraskaCharacter::DropDelyEnd()
 		NormalHud = true;
 		intHudOff();
 		LookinPhys = false;
+		notolerance = false;
 		UE_LOG(LogTemp, Warning, TEXT("Timer Success"));
 	}
 	else
