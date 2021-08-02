@@ -12,6 +12,9 @@
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "Nebraska/GrabObject.h"
 #include "Nebraska/ExaminationComponent.h"
+#include "NebraskaGameInstance.h"
+#include "Nebraska/PickUpActor.h"
+#include "Nebraska/LevelDoor.h"
 #include "NebraskaCharacter.generated.h"
 
 class UInputComponent;
@@ -22,6 +25,8 @@ class UMotionControllerComponent;
 class UAnimMontage;
 class USoundBase;
 class UCharacterMovementComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryUpdated);
 
 UCLASS(config=Game)
 class ANebraskaCharacter : public ACharacter
@@ -116,6 +121,12 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ExamHudOff();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void LevelHudOn();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void LevelHudOff();
+
 	UFUNCTION()
 	void Grab();
 
@@ -127,6 +138,12 @@ public:
 
 	UFUNCTION()
 	void DropDelyEnd();
+
+	UFUNCTION(BlueprintCallable)
+	void UseItem(APickUpActor* Item);
+
+	UFUNCTION()
+	void OpenDoor();
 
 
 protected:
@@ -166,11 +183,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bCanMove;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool HealthIsFull;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsSprinting;
+
 	bool bHoldingItem;
 	bool bInspecting;
 
 	float PitchMax;
 	float PitchMin;
+
+	float VelocityLength;
+
+	bool notolerance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Health;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool PhysicsHandleHolding;
 
 	FVector HoldingComp;
 	FRotator LastRotation;
@@ -191,6 +224,41 @@ public:
 
 	bool LookinPhys;
 	bool LookinExam;
+	bool LookinPick;
+	bool LookinLevel;
+
+	UPROPERTY(EditAnywhere)
+	class UNebraskaGameInstance* Instance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class APickUpActor* PickUpClass;
+
+	FHitResult Hit3;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<TEnumAsByte<EObjectTypeQuery>> PickObj;
+
+	FHitResult Hit4;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<TEnumAsByte<EObjectTypeQuery>> LevelObj;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class ALevelDoor* Leveldoor;
+
+	//Inventory Variables
+	UPROPERTY(EditAnywhere)
+	int32 Capacity;
+
+	bool AddItem(APickUpActor* Item);
+	bool RemoveItem(APickUpActor* Item);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnInventoryUpdated OnInventoryUpdated;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<class APickUpActor*> Items;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool CrowbarUse;
 
 protected:
 
@@ -217,6 +285,7 @@ protected:
 
 	void sprint();
 	
+	UFUNCTION(BlueprintCallable)
 	void stopsprinting();
 
 	void Interact();
@@ -224,10 +293,14 @@ protected:
 	void Inspect();
 	void InspectR();
 
+	UFUNCTION(BlueprintCallable)
 	void ToggleMovement();
+
 	void ToggleItemPickUp();
 
 	void Examin();
+
+	void PickUp();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* glowstick;
