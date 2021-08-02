@@ -3,6 +3,7 @@
 
 #include "PickUpActor.h"
 #include "GameFramework/Actor.h"
+#include "Nebraska/NebraskaGameInstance.h"
 #include "C:\Program Files\Epic Games\UE_4.26\Engine\Source\Runtime\Engine\Classes\Kismet\GameplayStatics.h"
 
 // Sets default values
@@ -12,15 +13,13 @@ APickUpActor::APickUpActor()
 	PrimaryActorTick.bCanEverTick = true;
 	MyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	RootComponent = MyMesh;
-
-	PickedUp = false;
 }
 
 // Called when the game starts or when spawned
 void APickUpActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 }
 
 // Called every frame
@@ -34,6 +33,12 @@ void APickUpActor::OnPickedUp()
 {
 	UGameplayStatics::PlaySound2D(MyMesh, PickUpSound);
 	MyMesh->DestroyComponent(true);
+	PickUpEvent();
+}
+
+void APickUpActor::PickUpEvent()
+{
+
 }
 
 void APickUpActor::Use(ANebraskaCharacter* Character)
