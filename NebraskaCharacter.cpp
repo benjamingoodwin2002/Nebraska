@@ -298,7 +298,7 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 			if (DoOnce2)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Setting timer"));
-				GetWorld()->GetTimerManager().SetTimer(DropDely, this, &ANebraskaCharacter::DropDelyEnd, 0.7f, false);
+				GetWorld()->GetTimerManager().SetTimer(DropDely, this, &ANebraskaCharacter::DropDelyEnd, 1.1f, false);
 				DoOnce2 = false;
 			}
 		}
