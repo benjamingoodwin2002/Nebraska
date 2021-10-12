@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Nebraska/NebraskaCharacter.h"
-#include "Nebraska/NebraskaGameInstance.h"
 #include "PickUpActor.generated.h"
 
 UCLASS()
