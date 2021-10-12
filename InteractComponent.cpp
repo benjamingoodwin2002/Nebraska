@@ -49,9 +49,6 @@ bool UInteractComponent::Grab(UObject* WorldContextObject, UPhysicsHandleCompone
 	FRotator MyRotation = GetOwner()->GetActorRotation();
 	FTransform Mytransforms = GetOwner()->GetActorTransform();
 
-	//EDrawDebugTrace::None
-	//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Green, false, 1, 0, 1);
-
 	if (UKismetSystemLibrary::LineTraceSingleForObjects(WorldContextObject, StartTrace, EndTrace, PhysicObjectType, false, ActorsToIgnore, EDrawDebugTrace::None, Hit, true, FColor::Red, FColor::Green))
 	{
 		if (Hit.GetActor() != nullptr)
@@ -67,20 +64,17 @@ bool UInteractComponent::Grab(UObject* WorldContextObject, UPhysicsHandleCompone
 						VectorLength = Distance.Size();
 						if (PH != nullptr)
 						{
-							//if (VectorLength <= MinGrabLength)
-							//{
-								HitComp->SetEnableGravity(true);
-								bPhysicHandleActive = true;
-								VectorLength = SnapDistance;
-								bObjectHeld = true;
-								if (GrabSound != nullptr)
-								{
-									UGameplayStatics::PlaySoundAtLocation(this, GrabSound, GetOwner()->GetActorLocation());
-								}
-								PH->GrabComponent(HitComp, Hit.BoneName, HitComp->GetCenterOfMass(), true);
-								return true;
-							//}
-							//else return false;
+							HitComp->SetEnableGravity(true);
+							bPhysicHandleActive = true;
+							VectorLength = SnapDistance;
+							bObjectHeld = true;
+							ObjectHeldBP = true;
+							if (GrabSound != nullptr)
+							{
+								UGameplayStatics::PlaySoundAtLocation(this, GrabSound, GetOwner()->GetActorLocation());
+							}
+							PH->GrabComponent(HitComp, Hit.BoneName, HitComp->GetCenterOfMass(), true);
+							return true;
 						}
 						else return false;
 					}
@@ -125,6 +119,7 @@ bool UInteractComponent::Release(UPhysicsHandleComponent* PH)
 	{
 		bPhysicHandleActive = false;
 		bObjectHeld = false;
+		ObjectHeldBP = false;
 		PH->ReleaseComponent();
 		return true;
 	}
