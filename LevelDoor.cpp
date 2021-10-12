@@ -2,6 +2,7 @@
 
 
 #include "LevelDoor.h"
+#include "Nebraska/NebraskaCharacter.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
