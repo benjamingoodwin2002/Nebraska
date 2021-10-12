@@ -91,6 +91,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void glowlighton();
 
+	UFUNCTION(BlueprintCallable)
+	void ToggleMovement();
+
 	UFUNCTION(BlueprintImplementableEvent)
 	void Walk();
 
@@ -160,6 +163,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseTurnRate;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
+	float TurnRate;
+
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
@@ -182,6 +188,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bCanMove;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool examing_player;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool HealthIsFull;
@@ -293,8 +302,8 @@ protected:
 	void Inspect();
 	void InspectR();
 
-	UFUNCTION(BlueprintCallable)
-	void ToggleMovement();
+	//UFUNCTION(BlueprintCallable)
+	//void ToggleMovement();
 
 	void ToggleItemPickUp();
 
