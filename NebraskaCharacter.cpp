@@ -110,6 +110,29 @@ void ANebraskaCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (Instance->BodyTemp <= 0.22f)
+	{
+		if (examing_player)
+		{
+			examing_player = false;
+			ToggleMovement();
+			ExamHudOff();
+			NormalHud = true;
+			ExamComp->Examin2End();
+		}
+	}
+	else if (Instance->BodyTemp >= 0.83f)
+	{
+		if (examing_player)
+		{
+			examing_player = false;
+			ToggleMovement();
+			ExamHudOff();
+			NormalHud = true;
+			ExamComp->Examin2End();
+		}
+	}
+
 	if (Instance->HealthInst <= 0.0f)
 	{
 		intHudOff();
@@ -510,6 +533,7 @@ void ANebraskaCharacter::TurnAtRate(float Rate)
 	{
 		// calculate delta for this frame from the rate information
 		AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+		TurnRate = Rate;
 	}
 }
 
@@ -612,6 +636,7 @@ void ANebraskaCharacter::Examin()
 	{
 		if (ExamComp->IsExamin)
 		{
+			examing_player = false;
 			ToggleMovement();
 			ExamHudOff();
 			NormalHud = true;
@@ -619,6 +644,7 @@ void ANebraskaCharacter::Examin()
 		}
 		else
 		{
+			examing_player = true;
 			ToggleMovement();
 			ExamHudOff();
 			NormalHud = false;
@@ -629,6 +655,14 @@ void ANebraskaCharacter::Examin()
 				notolerance = false;
 			}
 		}
+	}
+	else if (examing_player)
+	{
+		examing_player = false;
+		ToggleMovement();
+		ExamHudOff();
+		NormalHud = true;
+		ExamComp->Examin2End();
 	}
 }
 
