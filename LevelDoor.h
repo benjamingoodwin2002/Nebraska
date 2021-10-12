@@ -4,8 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "c:\users\bgpro\documents\unreal projects\nebraska\Source\Nebraska\NebraskaGameInstance.h"
-#include "Nebraska/NebraskaCharacter.h"
+#include "Nebraska/NebraskaGameInstance.h"
 #include "LevelDoor.generated.h"
 
 UCLASS(Abstract, Blueprintable)
