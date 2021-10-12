@@ -4,6 +4,7 @@
 #include "PickUpActor.h"
 #include "GameFramework/Actor.h"
 #include "Nebraska/NebraskaGameInstance.h"
+#include "Nebraska/NebraskaCharacter.h"
 #include "C:\Program Files\Epic Games\UE_4.26\Engine\Source\Runtime\Engine\Classes\Kismet\GameplayStatics.h"
 
 // Sets default values
