@@ -66,3 +66,4 @@ void UExaminationComponent::Examin2End()
 		ExamWidget->RemoveFromParent();
 	}
 }
+
