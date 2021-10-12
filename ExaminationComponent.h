@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "NebraskaCharacter.h"
 #include "Blueprint/UserWidget.h"
 #include "ExaminationComponent.generated.h"
 
