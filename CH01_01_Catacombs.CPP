@@ -23,6 +23,7 @@ void ACH01_01_Catacombs::BeginPlay()
 	if (FirstPersonPlayer && FirstPersonPlayer == UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
 	{
 		FirstPersonPlayer->intHudOff();
+		FirstPersonPlayer->notolerance = true;
 		FirstPersonPlayer->NormalHud = false;
 		FirstPersonPlayer->bCanLook = false;
 		FirstPersonPlayer->bCanMove = false;
@@ -37,6 +38,7 @@ void ACH01_01_Catacombs::EndIntroEnd()
 	if (FirstPersonPlayer && FirstPersonPlayer == UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
 	{
 		FirstPersonPlayer->intHudOff();
+		FirstPersonPlayer->notolerance = false;
 		FirstPersonPlayer->NormalHud = true;
 		FirstPersonPlayer->bCanLook = true;
 		FirstPersonPlayer->bCanMove = true;
