@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Nebraska/PickUpActor.h"
 #include "NebraskaGameInstance.generated.h"
 
 /**
@@ -17,8 +18,27 @@ class NEBRASKA_API UNebraskaGameInstance : public UGameInstance
 public:
 
 	UNebraskaGameInstance();
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool C1Locked;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int	PainkillerCount;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float HealthInst;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float BodyTemp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool billyconv;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<class APickUpActor*> ItemsInst;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class APickUpActor* PickUpClassInst;
 };
