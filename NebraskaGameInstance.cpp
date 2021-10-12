@@ -2,7 +2,6 @@
 
 
 #include "NebraskaGameInstance.h"
-
 #include "Blueprint/UserWidget.h"
 #include "UObject/ConstructorHelpers.H"
 
@@ -10,6 +9,7 @@ UNebraskaGameInstance::UNebraskaGameInstance()
 {
 	C1Locked = true;
 	HealthInst = 1.0f;
+	BodyTemp = 0.63f;
 }
 
 //void UNebraskaGameInstance::Init()
