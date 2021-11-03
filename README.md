@@ -9,7 +9,7 @@ Until now I have been a one-man game developer which requires that I am proficie
 My competencies include: level design, programming, physics model interaction, enemy AI (incl behavior trees, blackboards, etc), inventory systems, vectors/linear algebra, Slate/UMG, sound engineering, etc.
 While doing all aspects of game production and publishing has taught me a lot, I am looking to join a video game company so that I can focus on my core strengths and develop deep expertise in programming, which is the area I enjoy most. This would not preclude me from contributing in other areas too. 
 
-https://www.youtube.com/channel/UC8sgMBuLquRoLgmWp2obNLQ
+[https://www.youtube.com/channel/UC8sgMBuLquRoLgmWp2obNLQ]
 Link to my YouTube channel which showcases some of my work ☝️
 
 Skills:
